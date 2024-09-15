@@ -1,4 +1,4 @@
-name: Setup Free RDP
+name: Setup RDP via Ngrok
 
 on: [push, workflow_dispatch]
 
@@ -10,15 +10,14 @@ jobs:
       - name: Download Ngrok
         run: |
           Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip -OutFile ngrok.zip
-          Expand-Archive ngrok.zip -DestinationPath $env:USERPROFILE
-          Move-Item "$env:USERPROFILE\ngrok.exe" $env:USERPROFILE\ngrok\ngrok.exe
+          Expand-Archive ngrok.zip -DestinationPath $env:USERPROFILE\ngrok
 
       - name: Set Ngrok Auth Token
         run: .\ngrok\ngrok.exe authtoken $Env:NGROK_AUTH_TOKEN
         env:
           NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
 
-      - name: Enable Remote Desktop
+      - name: Enable RDP
         run: |
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
@@ -33,4 +32,4 @@ jobs:
       - name: Get Ngrok URL
         run: |
           $url = (Invoke-RestMethod -Uri http://127.0.0.1:4040/api/tunnels | ConvertFrom-Json).tunnels[0].public_url
-          Write-Host "RDP is available at: $url"￼Enter
+          Write-Host "RDP is available at: $url"

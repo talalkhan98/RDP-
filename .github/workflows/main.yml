@@ -12,13 +12,10 @@ jobs:
           Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip -OutFile ngrok.zip
           Expand-Archive ngrok.zip -DestinationPath $env:USERPROFILE\ngrok
 
-      - name: Add Ngrok to PATH
-        run: |
-          $env:PATH += ";$env:USERPROFILE\ngrok"
-          [Environment]::SetEnvironmentVariable("PATH", $env:PATH, [EnvironmentVariableTarget]::Process)
-
       - name: Set Ngrok Auth Token
-        run: ngrok.exe authtoken $Env:NGROK_AUTH_TOKEN
+        run: |
+          $ngrokPath = "$env:USERPROFILE\ngrok\ngrok.exe"
+          & $ngrokPath authtoken $Env:NGROK_AUTH_TOKEN
         env:
           NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
 
@@ -26,13 +23,15 @@ jobs:
         run: |
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
 
       - name: Set User Password
         run: Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!" -Force)
 
       - name: Start Ngrok Tunnel
-        run: ngrok.exe tcp 3389
+        run: |
+          $ngrokPath = "$env:USERPROFILE\ngrok\ngrok.exe"
+          & $ngrokPath tcp 3389
 
       - name: Get Ngrok URL
         run: |

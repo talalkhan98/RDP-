@@ -12,8 +12,13 @@ jobs:
           Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip -OutFile ngrok.zip
           Expand-Archive ngrok.zip -DestinationPath $env:USERPROFILE\ngrok
 
+      - name: Add Ngrok to PATH
+        run: |
+          $env:PATH += ";$env:USERPROFILE\ngrok"
+          [Environment]::SetEnvironmentVariable("PATH", $env:PATH, [EnvironmentVariableTarget]::Process)
+
       - name: Set Ngrok Auth Token
-        run: .\ngrok\ngrok.exe authtoken $Env:NGROK_AUTH_TOKEN
+        run: ngrok.exe authtoken $Env:NGROK_AUTH_TOKEN
         env:
           NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
 
@@ -27,7 +32,7 @@ jobs:
         run: Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!" -Force)
 
       - name: Start Ngrok Tunnel
-        run: .\ngrok\ngrok.exe tcp 3389
+        run: ngrok.exe tcp 3389
 
       - name: Get Ngrok URL
         run: |

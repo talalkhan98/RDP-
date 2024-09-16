@@ -1,0 +1,38 @@
+name: Setup RDP via Ngrok
+
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Download Ngrok
+        run: |
+          Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip -OutFile ngrok.zip
+          Expand-Archive ngrok.zip -DestinationPath $env:USERPROFILE\ngrok
+
+      - name: Set Ngrok Auth Token
+        run: |
+          $ngrokPath = "$env:USERPROFILE\ngrok\ngrok.exe"
+          & $ngrokPath authtoken $Env:NGROK_AUTH_TOKEN
+        env:
+          NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
+
+      - name: Enable RDP
+        run: |
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
+
+      - name: Set User Password
+        run: Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!" -Force)
+
+      - name: Start Ngrok Tunnel
+        run: |
+          $ngrokPath = "$env:USERPROFILE\ngrok\ngrok.exe"
+          & $ngrokPath tcp 3389
+
+      - name: Keep Session Alive
+        run: |
+          while ($true) { Start-Sleep -Seconds 300 }
